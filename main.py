@@ -9,10 +9,10 @@ from typing import List, Dict
 SYSTEM_PROMPT = """
 Instruct the LLM in what to do with the data that is provided to it.
 """
-MODEL_NAME = ""  # TODO: Replace with the actual model name from gpt4all
-API_ENDPOINT = ""  # TODO: Replace with the actual API endpoint from gpt4all
+MODEL_NAME = "open-mistral-nemo"  # TODO: Replace with the actual model name from gpt4all
+API_ENDPOINT = "https://api.mistral.ai/v1/chat/completions"  # TODO: Replace with the actual API endpoint from gpt4all
 
-API_KEY = "YOUR_API_KEY"  # TODO: Replace with the actual API key from gpt4all (maybe not needed)
+API_KEY = "cm2ATsS9J90bOatyjav9Ux3OBGlvDJOl"  # TODO: Replace with the actual API key from gpt4all (maybe not needed)
 MAX_RETRIES = 3  # Number of retries for the LLM API call
 BASE_DELAY = 1  # Base delay in seconds between retries
 
@@ -92,13 +92,37 @@ def get_git_diffs(repo_path: str) -> str:
 
 
 def generate_commit_message(diffs: str) -> str | None:
-    # TODO: Implement the logic to generate the commit message from the LLM response
-    return None
+    CommitMessage = call_llm_api("Please write a short title for a commit message based on the provided diff outlining the major changes:\n\n" + diffs)
+    return CommitMessage
 
 
 def call_llm_api(prompt: str) -> str | None:
-    # TODO: Implement the logic to call the LLM API
-    return None
+    data = { 
+    "model": "open-mistral-nemo",
+    "messages": [
+        {
+            "content": prompt,
+            "role": "user"
+        }
+    ],
+    "response_format": {
+        "type": "json_object"
+    },
+    "max_tokens": 100
+    }
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {API_KEY}"
+    }
+
+    try:
+        response = requests.post(API_ENDPOINT, headers=headers, json=data)
+        response.raise_for_status()
+        result = response.json()
+        return result.get("choices", [{}])[0].get("message", "").get("content", "").strip()
+    except requests.exceptions.RequestException as e:
+        print('Error:', response.status_code)
+        return None
 
 
 def main():
